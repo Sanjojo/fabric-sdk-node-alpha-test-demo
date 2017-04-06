@@ -95,8 +95,10 @@ function findSource(goPath, filePath) {
 				if (entry.stats.isFile() && isSource(entry.path)) {
 
 					var desc = {
-						name: path.relative(goPath, entry.path),
-						fqp: entry.path
+						// name: path.relative(goPath, entry.path),
+						// fqp: entry.path
+                        name: path.relative(goPath, entry.path).replace(/\\/g,"\/"),
+                        fqp: entry.path.replace(/\\/g,"\/")
 					};
 
 					logger.debug('adding entry', desc);

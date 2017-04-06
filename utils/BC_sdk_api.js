@@ -8,7 +8,7 @@ var Peer = require('../fabric-client/lib/Peer.js');
 var Orderer = require('../fabric-client/lib/Orderer.js');
 var EventHub = require('../fabric-client/lib/EventHub.js');
 var User = require('../fabric-client/lib/User.js');
-// var copService = require('../fabric-ca-client/lib/FabricCAClientImpl.js');
+// var util = require('util');
 var fs = require('fs');
 var path = require('path');
 var grpc = require('grpc');
@@ -22,6 +22,7 @@ var nonce = null;
 var allEventhubs = [];
 
 
+
 var bcSdkApi = function() {
     logger.info('bcSDKAPI  ---start---');
 
@@ -33,6 +34,24 @@ var bcSdkApi = function() {
     var ORGS = hfc.getConfigSetting('test-network');
 
     var _commonProto = grpc.load('./fabric-client/lib/protos/common/common.proto').common;
+
+    // //------------------------------------------------
+    // var client = new hfc();
+    // var chain = client.newChain('mychannel');
+    //
+    // var caRootsPath = ORGS.orderer.tls_cacerts;
+    // var data = fs.readFileSync(path.join(__dirname,caRootsPath));
+    // var caroots = Buffer.from(data).toString();
+    //
+    // chain.addOrderer(
+    //     new Orderer(
+    //         ORGS.orderer.url,
+    //         {
+    //             'pem': caroots,
+    //             'ssl-target-name-override': ORGS.orderer['server-hostname']
+    //         }
+    //     ));
+    // //------------------------------------------------
 
     var create_Channel = function(callback) {
         logger.info('createChannel-------start---------');
@@ -56,13 +75,13 @@ var bcSdkApi = function() {
         // Acting as a client in org1 when creating the channel
         var org = ORGS.org1.name;
 
-        utils.setConfigSetting('key-value-store', path.join(__dirname,'../fabric-client/lib/impl/FileKeyValueStore.js'));
+        // utils.setConfigSetting('key-value-store', path.join(__dirname,'../fabric-client/lib/impl/FileKeyValueStore.js'));
         return hfc.newDefaultKeyValueStore({
                 path: testUtil.storePathForOrg(org)
         }).then(function(store){
             client.setStateStore(store);
-            return testUtil.getSubmitter(client, true, 'org1');
-            // return testUtil.getSubmitter(client, 'org1');
+            // return testUtil.getSubmitter(client, true, 'org1');
+            return testUtil.getSubmitter(client, 'org1');
         })
         .then(function(admin){
             logger.info('Successfully enrolled user \'admin\'');
@@ -160,8 +179,8 @@ var bcSdkApi = function() {
             path: testUtil.storePathForOrg(orgName)
         }).then(function(store){
             client.setStateStore(store);
-            return testUtil.getSubmitter(client, true, org);
-            // return testUtil.getSubmitter(client, org);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
         })
         .then(function(admin){
             logger.info('Successfully enrolled user \'admin\'');
@@ -210,24 +229,33 @@ var bcSdkApi = function() {
             callback('Failed to enroll user \'admin\' due to error: ' + err.stack ? err.stack : err);
         })
         .then(function(results){
-            logger.info(util.format('Join Channel R E S P O N S E : %j', results));
+            logger.info('Join Channel R E S P O N S E : ', results);
 
             for(var key in eventhubs) {
                 var eventhub = eventhubs[key];
                 if (eventhub && eventhub.isconnected()) {
-                    t.comment('Disconnecting the event hub');
+                    logger.info('Disconnecting the event hub');
                     eventhub.disconnect();
                 }
             }
 
             if(results[0] && results[0][0] && results[0][0].response && results[0][0].response.status == 200) {
-                logger.info(util.format('Successfully joined peers in organization %s to join the channel', orgName));
+                logger.info('Successfully joined peers in organization '+ orgName +' to join the channel');
                 callback(null,null);
             } else {
                 logger.error('Failed to join channel');
                 callback('Failed to join channel');
             }
         }, function(err){
+
+            for(var key in eventhubs) {
+                var eventhub = eventhubs[key];
+                if (eventhub && eventhub.isconnected()) {
+                    logger.info('Disconnecting the event hub');
+                    eventhub.disconnect();
+                }
+            }
+
             logger.error('Failed to join channel due to error: ' + err.stack ? err.stack : err);
             callback('Failed to join channel due to error: ' + err.stack ? err.stack : err);
         });
@@ -236,22 +264,22 @@ var bcSdkApi = function() {
     var install_Chaincode = function(org, callback) {
         logger.info('install_Chaincode-------start---------');
 
-        // var client = new hfc();
-        // var chain = client.newChain(testUtil.END2END.channel);
-        //
-        // var caRootsPath = ORGS.orderer.tls_cacerts;
-        // let data = fs.readFileSync(path.join(__dirname, caRootsPath));
-        // let caroots = Buffer.from(data).toString();
-        //
-        // chain.addOrderer(
-        //     new Orderer(
-        //         ORGS.orderer.url,
-        //         {
-        //             'pem': caroots,
-        //             'ssl-target-name-override': ORGS.orderer['server-hostname']
-        //         }
-        //     )
-        // );
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
+
+        var caRootsPath = ORGS.orderer.tls_cacerts;
+        let data = fs.readFileSync(path.join(__dirname, caRootsPath));
+        let caroots = Buffer.from(data).toString();
+
+        chain.addOrderer(
+            new Orderer(
+                ORGS.orderer.url,
+                {
+                    'pem': caroots,
+                    'ssl-target-name-override': ORGS.orderer['server-hostname']
+                }
+            )
+        );
 
         var orgName = ORGS[org].name;
 
@@ -259,7 +287,7 @@ var bcSdkApi = function() {
         for (let key in ORGS[org]) {
             if (ORGS[org].hasOwnProperty(key)) {
                 if (key.indexOf('peer') === 0) {
-                    let data = fs.readFileSync(path.join(__dirname,pORGS[org][key]['tls_cacerts']));
+                    let data = fs.readFileSync(path.join(__dirname,ORGS[org][key]['tls_cacerts']));
                     let peer = new Peer(
                         ORGS[org][key].requests,
                         {
@@ -278,8 +306,8 @@ var bcSdkApi = function() {
             path: testUtil.storePathForOrg(orgName)
         }).then(function(store){
             client.setStateStore(store);
-            return testUtil.getSubmitter(client, true, org);
-            // return testUtil.getSubmitter(client, org);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
         }).then(function(admin){
             logger.info('Successfully enrolled user \'admin\'');
             the_user = admin;
@@ -318,7 +346,7 @@ var bcSdkApi = function() {
                 all_good = all_good & one_good;
             }
             if (all_good) {
-                logger.info(util.format('Successfully sent install Proposal and received ProposalResponse: Status - %s', proposalResponses[0].response.status));
+                logger.info('Successfully sent install Proposal and received ProposalResponse: Status - '+ proposalResponses[0].response.status);
                 callback(null,null);
             } else {
                 logger.error('Failed to send install Proposal or receive valid response. Response null or status is not 200. exiting...');
@@ -333,22 +361,22 @@ var bcSdkApi = function() {
     var instantiate_Chaincode = function(org, callback){
         logger.info('instantiate_Chaincode-------start---------');
 
-        // var client = new hfc();
-        // var chain = client.newChain(testUtil.END2END.channel);
-        //
-        // var caRootsPath = ORGS.orderer.tls_cacerts;
-        // let data = fs.readFileSync(path.join(__dirname,caRootsPath));
-        // let caroots = Buffer.from(data).toString();
-        //
-        // chain.addOrderer(
-        //     new Orderer(
-        //         ORGS.orderer.url,
-        //         {
-        //             'pem': caroots,
-        //             'ssl-target-name-override': ORGS.orderer['server-hostname']
-        //         }
-        //     )
-        // );
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
+
+        var caRootsPath = ORGS.orderer.tls_cacerts;
+        let data = fs.readFileSync(path.join(__dirname,caRootsPath));
+        let caroots = Buffer.from(data).toString();
+
+        chain.addOrderer(
+            new Orderer(
+                ORGS.orderer.url,
+                {
+                    'pem': caroots,
+                    'ssl-target-name-override': ORGS.orderer['server-hostname']
+                }
+            )
+        );
 
         var orgName = ORGS[org].name;
 
@@ -387,8 +415,8 @@ var bcSdkApi = function() {
             path: testUtil.storePathForOrg(orgName)
         }).then(function(store){
             client.setStateStore(store);
-            return testUtil.getSubmitter(client, true, org);
-            // return testUtil.getSubmitter(client, org);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
         }).then(function(admin){
             logger.info('Successfully enrolled user \'admin\'');
             the_user = admin;
@@ -434,7 +462,11 @@ var bcSdkApi = function() {
                 all_good = all_good & one_good;
             }
             if (all_good) {
-                logger.info(util.format('Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s", metadata - "%s", endorsement signature: %s', proposalResponses[0].response.status, proposalResponses[0].response.message, proposalResponses[0].response.payload, proposalResponses[0].endorsement.signature));
+                logger.info('Successfully sent Proposal and received ProposalResponse: Status - '+proposalResponses[0].response.status+'' +
+                    ', message - "'+proposalResponses[0].response.message+'"' +
+                    ', metadata - "'+proposalResponses[0].response.payload+'"' +
+                    ', endorsement signature: '+proposalResponses[0].endorsement.signature);
+
                 var request = {
                     proposalResponses: proposalResponses,
                     proposal: proposal,
@@ -444,31 +476,32 @@ var bcSdkApi = function() {
                 // set the transaction listener and set a timeout of 30sec
                 // if the transaction did not get committed within the timeout period,
                 // fail the test
-                var deployId = tx_id.toString();
-
-                var eventPromises = [];
-                eventhubs.forEach(function(eh){
-                    let txPromise = new Promise(function(resolve, reject){
-                        let handle = setTimeout(reject, 30000);
-
-                        eh.registerTxEvent(deployId.toString(), function(tx, code){
-                            logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
-                            clearTimeout(handle);
-                            eh.unregisterTxEvent(deployId);
-                            if (code !== 'VALID') {
-                                logger.error('The chaincode instantiate transaction was invalid, code = ' + code);
-                                reject();
-                            } else {
-                                logger.info('The chaincode instantiate transaction was valid.');
-                                resolve();
-                            }
-                        });
-                    });
-                    eventPromises.push(txPromise);
-                });
+                // var deployId = tx_id.toString();
+                //
+                // var eventPromises = [];
+                // eventhubs.forEach(function(eh){
+                //     let txPromise = new Promise(function(resolve, reject){
+                //         let handle = setTimeout(reject, 30000);
+                //
+                //         eh.registerTxEvent(deployId.toString(), function(tx, code){
+                //             logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
+                //             clearTimeout(handle);
+                //             eh.unregisterTxEvent(deployId);
+                //             if (code !== 'VALID') {
+                //                 logger.error('The chaincode instantiate transaction was invalid, code = ' + code);
+                //                 reject();
+                //             } else {
+                //                 logger.info('The chaincode instantiate transaction was valid.');
+                //                 resolve();
+                //             }
+                //         });
+                //     });
+                //     eventPromises.push(txPromise);
+                // });
 
                 var sendPromise = chain.sendTransaction(request);
-                return Promise.all([sendPromise].concat(eventPromises))
+                // return Promise.all([sendPromise].concat(eventPromises))
+                return Promise.all([sendPromise])
                     .then(function(results){
                         logger.info('Event promise all complete and testing complete');
                         return results[0]; // the first returned value is from the 'sendPromise' which is from the 'sendTransaction()' call
@@ -484,14 +517,35 @@ var bcSdkApi = function() {
             logger.error('Failed to send instantiate proposal due to error: ' + err.stack ? err.stack : err);
             callback('Failed to send instantiate proposal due to error: ' + err.stack ? err.stack : err);
         }).then(function(response){
+
+            for(var key in eventhubs) {
+                var eventhub = eventhubs[key];
+                if (eventhub && eventhub.isconnected()) {
+                    logger.info('Disconnecting the event hub');
+                    eventhub.disconnect();
+                }
+            }
+
             if (response.status === 'SUCCESS') {
                 logger.info('Successfully sent transaction to the orderer.');
-                callback(null,null);
+                sleep(10000).then(function(nothing) {
+                    logger.info('wait 10 s before callback.');
+                    callback(null,null);
+                });
             } else {
                 logger.error('Failed to order the transaction. Error code: ' + response.status);
                 callback('Failed to order the transaction. Error code: ' + response.status);
             }
         }, function(err){
+
+            for(var key in eventhubs) {
+                var eventhub = eventhubs[key];
+                if (eventhub && eventhub.isconnected()) {
+                    logger.info('Disconnecting the event hub');
+                    eventhub.disconnect();
+                }
+            }
+
             logger.error('Failed to send instantiate due to error: ' + err.stack ? err.stack : err);
             callback('Failed to send instantiate due to error: ' + err.stack ? err.stack : err);
         });
@@ -499,6 +553,7 @@ var bcSdkApi = function() {
 
     var query_by_chaincode = function(org, callback) {
         logger.info('query_by_chaincode-------start---------');
+
         var client = new hfc();
         var chain = client.newChain(testUtil.END2END.channel);
 
@@ -524,8 +579,8 @@ var bcSdkApi = function() {
             path: testUtil.storePathForOrg(orgName)
         }).then(function(store){
             client.setStateStore(store);
-            return testUtil.getSubmitter(client, true, org);
-            // return testUtil.getSubmitter(client, org);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
         }).then(function(admin){
             the_user = admin;
             nonce = utils.getNonce();
@@ -550,7 +605,7 @@ var bcSdkApi = function() {
                 for(let i = 0; i < response_payloads.length; i++) {
                     logger.info("query result:" + response_payloads[i].toString('utf8'));
                 }
-                callback(null,null);
+                callback(null,response_payloads[0].toString('utf8'));
             } else {
                 logger.error('response_payloads is null');
                 callback('response_payloads is null');

@@ -3,19 +3,19 @@
  */
 var path = require('path');
 var fs = require('fs-extra');
-var os = require('os');
+// var os = require('os');
 
 var jsrsa = require('jsrsasign');
 var KEYUTIL = jsrsa.KEYUTIL;
 
-var hfc = require('fabric-client');
-var utils = require('../fabric-client/lib/utils.js');
-var copService = require('fabric-ca-client/lib/FabricCAClientImpl.js');
-var User = require('fabric-client/lib/User.js');
-var CryptoSuite = require('fabric-client/lib/impl/CryptoSuite_ECDSA_AES.js');
-var KeyStore = require('fabric-client/lib/impl/CryptoKeyStore.js');
-var ecdsaKey = require('fabric-client/lib/impl/ecdsa/key.js');
+var hfc = require('../fabric-client');
+var copService = require('../fabric-ca-client/lib/FabricCAClientImpl.js');
+var User = require('../fabric-client/lib/User.js');
+var CryptoSuite = require('../fabric-client/lib/impl/CryptoSuite_ECDSA_AES.js');
+var KeyStore = require('../fabric-client/lib/impl/CryptoKeyStore.js');
+var ecdsaKey = require('../fabric-client/lib/impl/ecdsa/key.js');
 
+var utils = require('../fabric-client/lib/utils.js');
 var logger = utils.getLogger('utils/util.js');
 
 module.exports.CHAINCODE_PATH = 'github.com/example_cc';
@@ -78,10 +78,10 @@ module.exports.readFile = readFile;
 hfc.addConfigFile('./config.json');
 var ORGS = hfc.getConfigSetting('test-network');
 
-var	tlsOptions = {
-    trustedRoots: [],
-    verify: false
-};
+// var	tlsOptions = {
+//     trustedRoots: [],
+//     verify: false
+// };
 
 function getSubmitter(username, password, client, loadFromConfig, userOrg) {
     var caUrl = ORGS[userOrg].ca;
@@ -96,7 +96,8 @@ function getSubmitter(username, password, client, loadFromConfig, userOrg) {
 
                 if (!loadFromConfig) {
                     // need to enroll it with CA server
-                    var cop = new copService(caUrl, tlsOptions, {keysize: 256, hash: 'SHA2'});
+                    // var cop = new copService(caUrl, tlsOptions, {keysize: 256, hash: 'SHA2'});
+                    var cop = new copService(caUrl);
 
                     var member;
                     return cop.enroll({

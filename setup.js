@@ -17,7 +17,7 @@ function getBcSDKApi(){
 
 function initPROD(callback) {
     logger.info('initPROD  ---start---');
-    process.env['GOPATH'] = 'chaincode';
+    process.env['GOPATH'] = 'fixtures';
 
     async.series (
         {
@@ -77,7 +77,7 @@ function initPROD(callback) {
             //     });
             // },
             'installChainCodeOrg1':function(callback){
-                bc.install_Proposal('org1', function(error, res) {
+                bc.install_Chaincode('org1', function(error, res) {
                     if (error) {
                         logger.error('install_Proposal失败。');
                         logger.error('程序退出');
@@ -90,7 +90,7 @@ function initPROD(callback) {
                 });
             },
             // 'installChainCodeOrg2':function(callback){
-            //     bc.install_Proposal('org2', function(error, res) {
+            //     bc.install_Chaincode('org2', function(error, res) {
             //         if (error) {
             //             logger.error('install_Proposal失败。');
             //             logger.error('程序退出');
@@ -103,7 +103,7 @@ function initPROD(callback) {
             //     });
             // },
             'instantiateChainCode':function(callback){
-                bc.instantiate_Proposal('org1', function(error, res){
+                bc.instantiate_Chaincode('org1', function(error, res){
                     if(error){
                         logger.error('instantiate_Proposal失败。');
                         logger.error('程序退出');
@@ -123,8 +123,8 @@ function initPROD(callback) {
                         callback(null, null);
                     }
                     else{
-                        // logger.info('query b value : ' + result);
-                        // callback(null, res);
+                        logger.info('query b value : ' + res);
+                        callback(null, res);
                     }
                 });
             }
@@ -134,13 +134,13 @@ function initPROD(callback) {
             process.exit(1);
         }
         else{
-            // logger.info('logon -> installproposal 正常完了' + result);
+            logger.info('logon -> query 正常完了 : ' + result);
         }
 
     });
 
 
 }
-// module.exports.getMember = getMember;
+
 module.exports.getBcSDKApi = getBcSDKApi;
 module.exports.initPROD = initPROD;
