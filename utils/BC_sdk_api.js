@@ -35,24 +35,6 @@ var bcSdkApi = function() {
 
     var _commonProto = grpc.load('./fabric-client/lib/protos/common/common.proto').common;
 
-    // //------------------------------------------------
-    // var client = new hfc();
-    // var chain = client.newChain('mychannel');
-    //
-    // var caRootsPath = ORGS.orderer.tls_cacerts;
-    // var data = fs.readFileSync(path.join(__dirname,caRootsPath));
-    // var caroots = Buffer.from(data).toString();
-    //
-    // chain.addOrderer(
-    //     new Orderer(
-    //         ORGS.orderer.url,
-    //         {
-    //             'pem': caroots,
-    //             'ssl-target-name-override': ORGS.orderer['server-hostname']
-    //         }
-    //     ));
-    // //------------------------------------------------
-
     var create_Channel = function(callback) {
         logger.info('createChannel-------start---------');
 
@@ -385,7 +367,9 @@ var bcSdkApi = function() {
 
         // set up the chain to use each org's 'peer1' for
         // both requests and events
-        for (let key in ORGS) {
+        let key = org;
+        if (key) {
+        // for (let key in ORGS) {
             if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
                 let data = fs.readFileSync(path.join(__dirname,ORGS[key].peer1['tls_cacerts']));
                 let peer = new Peer(
@@ -562,7 +546,9 @@ var bcSdkApi = function() {
         var targets = [];
         // set up the chain to use each org's 'peer1' for
         // both requests and events
-        for (let key in ORGS) {
+        let key = org;
+        if (key) {
+        // for (let key in ORGS) {
             if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
                 let data = fs.readFileSync(path.join(__dirname,ORGS[key].peer1['tls_cacerts']));
                 let peer = new Peer(

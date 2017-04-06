@@ -21,22 +21,7 @@ function initPROD(callback) {
 
     async.series (
         {
-            // 'loginUser':function(callback){
-            //     bc.logonUser(user,  function(error, res) {
-            //         if (error) {
-            //             logger.error('注册用户%s失败。错误信息:%j', user.enrollmentID, error);
-            //             logger.error('程序退出');
-            //             process.exit(1);
-            //         }
-            //         else {
-            //             logger.info('用户成功登录%s', user.enrollmentID);
-            //
-            //             member = res;
-            //             setMember(res);
-            //             callback(null, member);
-            //         }
-            //     });
-            // },
+
             'createChannel':function(callback){
                 bc.create_Channel(function(error, res) {
                     if (error) {
@@ -58,24 +43,24 @@ function initPROD(callback) {
                         process.exit(1);
                     }
                     else {
-                        logger.info('join_Channel成功。');
+                        logger.info('org1 join_Channel成功。');
                         callback(null, null);
                     }
                 });
             },
-            // 'joinChannelorg2':function(callback){
-            //     bc.join_Channel('org2', function(error, res) {
-            //         if (error) {
-            //             logger.error('join_Channel失败。');
-            //             logger.error('程序退出');
-            //             process.exit(1);
-            //         }
-            //         else {
-            //             logger.info('join_Channel成功。');
-            //             callback(null, member);
-            //         }
-            //     });
-            // },
+            'joinChannelorg2':function(callback){
+                bc.join_Channel('org2', function(error, res) {
+                    if (error) {
+                        logger.error('join_Channel失败。');
+                        logger.error('程序退出');
+                        process.exit(1);
+                    }
+                    else {
+                        logger.info('org2 join_Channel成功。');
+                        callback(null, null);
+                    }
+                });
+            },
             'installChainCodeOrg1':function(callback){
                 bc.install_Chaincode('org1', function(error, res) {
                     if (error) {
@@ -84,24 +69,24 @@ function initPROD(callback) {
                         process.exit(1);
                     }
                     else {
-                        logger.info('install_Proposal成功。');
+                        logger.info('org1 install_Proposal成功。');
                         callback(null, null);
                     }
                 });
             },
-            // 'installChainCodeOrg2':function(callback){
-            //     bc.install_Chaincode('org2', function(error, res) {
-            //         if (error) {
-            //             logger.error('install_Proposal失败。');
-            //             logger.error('程序退出');
-            //             process.exit(1);
-            //         }
-            //         else {
-            //             logger.info('install_Proposal成功。');
-            //             callback(null, member);
-            //         }
-            //     });
-            // },
+            'installChainCodeOrg2':function(callback){
+                bc.install_Chaincode('org2', function(error, res) {
+                    if (error) {
+                        logger.error('install_Proposal失败。');
+                        logger.error('程序退出');
+                        process.exit(1);
+                    }
+                    else {
+                        logger.info('org2 install_Proposal成功。');
+                        callback(null, null);
+                    }
+                });
+            },
             'instantiateChainCode':function(callback){
                 bc.instantiate_Chaincode('org1', function(error, res){
                     if(error){
@@ -110,12 +95,12 @@ function initPROD(callback) {
                         process.exit(1);
                     }
                     else{
-                        logger.info('instantiate_Proposal成功。');
+                        logger.info('instantiate_Proposal成功(by org1)。');
                         callback(null, null);
                     }
                 });
             },
-            'query':function(callback){
+            'query_org1':function(callback){
                 bc.query_by_chaincode('org1', function(error, res){
                     if(error){
                         logger.error('query_by_chaincode失败。');
@@ -123,7 +108,20 @@ function initPROD(callback) {
                         callback(null, null);
                     }
                     else{
-                        logger.info('query b value : ' + res);
+                        logger.info('org1 query b value : ' + res);
+                        callback(null, res);
+                    }
+                });
+            },
+            'query_org2':function(callback){
+                bc.query_by_chaincode('org2', function(error, res){
+                    if(error){
+                        logger.error('query_by_chaincode失败。');
+                        logger.error('程序退出');
+                        callback(null, null);
+                    }
+                    else{
+                        logger.info('org2 query b value : ' + res);
                         callback(null, res);
                     }
                 });
