@@ -3,12 +3,10 @@
  */
 var hfc = require('../fabric-client');
 var utils = require('../fabric-client/lib/utils.js');
-// var Chain = require('../fabric-client/lib/Chain.js');
 var Peer = require('../fabric-client/lib/Peer.js');
 var Orderer = require('../fabric-client/lib/Orderer.js');
 var EventHub = require('../fabric-client/lib/EventHub.js');
 var User = require('../fabric-client/lib/User.js');
-// var util = require('util');
 var fs = require('fs');
 var path = require('path');
 var grpc = require('grpc');
@@ -27,8 +25,6 @@ var bcSdkApi = function() {
     logger.info('bcSDKAPI  ---start---');
 
     var _bcSdkApi = {};
-    // var client = null;
-    // var chain = null;
 
     hfc.addConfigFile('./config.json');
     var ORGS = hfc.getConfigSetting('test-network');
@@ -213,11 +209,11 @@ var bcSdkApi = function() {
         .then(function(results){
             logger.info('Join Channel R E S P O N S E : ', results);
 
-            for(var key in eventhubs) {
-                var eventhub = eventhubs[key];
-                if (eventhub && eventhub.isconnected()) {
+            for(let key in eventhubs) {
+                let e = eventhubs[key];
+                if (e && e.isconnected()) {
                     logger.info('Disconnecting the event hub');
-                    eventhub.disconnect();
+                    e.disconnect();
                 }
             }
 
@@ -230,11 +226,11 @@ var bcSdkApi = function() {
             }
         }, function(err){
 
-            for(var key in eventhubs) {
-                var eventhub = eventhubs[key];
-                if (eventhub && eventhub.isconnected()) {
+            for(let key in eventhubs) {
+                let e = eventhubs[key];
+                if (e && e.isconnected()) {
                     logger.info('Disconnecting the event hub');
-                    eventhub.disconnect();
+                    e.disconnect();
                 }
             }
 
@@ -362,7 +358,6 @@ var bcSdkApi = function() {
 
         var orgName = ORGS[org].name;
 
-        var targets = [];
         var eventhubs = [];
 
         // set up the chain to use each org's 'peer1' for
@@ -457,20 +452,20 @@ var bcSdkApi = function() {
                     header: header
                 };
 
-                // set the transaction listener and set a timeout of 30sec
-                // if the transaction did not get committed within the timeout period,
-                // fail the test
+                // // set the transaction listener and set a timeout of 30sec
+                // // if the transaction did not get committed within the timeout period,
+                // // fail the test
                 // var deployId = tx_id.toString();
                 //
-                // var eventPromises = [];
+                // var eventPromisesTx = [];
                 // eventhubs.forEach(function(eh){
                 //     let txPromise = new Promise(function(resolve, reject){
                 //         let handle = setTimeout(reject, 30000);
                 //
                 //         eh.registerTxEvent(deployId.toString(), function(tx, code){
-                //             logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
                 //             clearTimeout(handle);
-                //             eh.unregisterTxEvent(deployId);
+                //             logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
+                //             // eh.unregisterTxEvent(deployId);
                 //             if (code !== 'VALID') {
                 //                 logger.error('The chaincode instantiate transaction was invalid, code = ' + code);
                 //                 reject();
@@ -480,11 +475,11 @@ var bcSdkApi = function() {
                 //             }
                 //         });
                 //     });
-                //     eventPromises.push(txPromise);
+                //     eventPromisesTx.push(txPromise);
                 // });
 
                 var sendPromise = chain.sendTransaction(request);
-                // return Promise.all([sendPromise].concat(eventPromises))
+                // return Promise.all([sendPromise].concat(eventPromisesTx))
                 return Promise.all([sendPromise])
                     .then(function(results){
                         logger.info('Event promise all complete and testing complete');
@@ -502,11 +497,11 @@ var bcSdkApi = function() {
             callback('Failed to send instantiate proposal due to error: ' + err.stack ? err.stack : err);
         }).then(function(response){
 
-            for(var key in eventhubs) {
-                var eventhub = eventhubs[key];
-                if (eventhub && eventhub.isconnected()) {
+            for(let key in eventhubs) {
+                let e = eventhubs[key];
+                if (e && e.isconnected()) {
                     logger.info('Disconnecting the event hub');
-                    eventhub.disconnect();
+                    e.disconnect();
                 }
             }
 
@@ -522,11 +517,11 @@ var bcSdkApi = function() {
             }
         }, function(err){
 
-            for(var key in eventhubs) {
-                var eventhub = eventhubs[key];
-                if (eventhub && eventhub.isconnected()) {
+            for(let key in eventhubs) {
+                let e = eventhubs[key];
+                if (e && e.isconnected()) {
                     logger.info('Disconnecting the event hub');
-                    eventhub.disconnect();
+                    e.disconnect();
                 }
             }
 
