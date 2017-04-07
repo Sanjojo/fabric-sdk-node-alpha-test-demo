@@ -4,7 +4,7 @@
 var fs = require('fs');
 var path = require('path');
 var async = require('async');
-var utils = require('./fabric-client/lib/utils.js');
+var utils = require('fabric-client/lib/utils.js');
 var BcSDKApi = require('./utils/BC_sdk_api');
 
 var logger = utils.getLogger('setup.js');

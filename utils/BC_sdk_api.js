@@ -1,12 +1,12 @@
 /**
  * Created by shanzhihua on 3/28/2017.
  */
-var hfc = require('../fabric-client');
-var utils = require('../fabric-client/lib/utils.js');
-var Peer = require('../fabric-client/lib/Peer.js');
-var Orderer = require('../fabric-client/lib/Orderer.js');
-var EventHub = require('../fabric-client/lib/EventHub.js');
-var User = require('../fabric-client/lib/User.js');
+var hfc = require('fabric-client');
+var utils = require('fabric-client/lib/utils.js');
+var Peer = require('fabric-client/lib/Peer.js');
+var Orderer = require('fabric-client/lib/Orderer.js');
+var EventHub = require('fabric-client/lib/EventHub.js');
+var User = require('fabric-client/lib/User.js');
 var fs = require('fs');
 var path = require('path');
 var grpc = require('grpc');
@@ -29,7 +29,8 @@ var bcSdkApi = function() {
     hfc.addConfigFile('./config.json');
     var ORGS = hfc.getConfigSetting('test-network');
 
-    var _commonProto = grpc.load('./fabric-client/lib/protos/common/common.proto').common;
+    //can't require(...)    error: import "../google/protobuf/timestamp.proto"; SyntaxError: Unexpected token import
+    var _commonProto = grpc.load('./node_modules/fabric-client/lib/protos/common/common.proto').common;
 
     var create_Channel = function(callback) {
         logger.info('createChannel-------start---------');

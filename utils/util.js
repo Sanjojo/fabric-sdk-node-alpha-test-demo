@@ -8,14 +8,14 @@ var fs = require('fs-extra');
 var jsrsa = require('jsrsasign');
 var KEYUTIL = jsrsa.KEYUTIL;
 
-var hfc = require('../fabric-client');
-var copService = require('../fabric-ca-client/lib/FabricCAClientImpl.js');
-var User = require('../fabric-client/lib/User.js');
-var CryptoSuite = require('../fabric-client/lib/impl/CryptoSuite_ECDSA_AES.js');
-var KeyStore = require('../fabric-client/lib/impl/CryptoKeyStore.js');
-var ecdsaKey = require('../fabric-client/lib/impl/ecdsa/key.js');
+var hfc = require('fabric-client');
+var copService = require('fabric-ca-client/lib/FabricCAClientImpl.js');
+var User = require('fabric-client/lib/User.js');
+var CryptoSuite = require('fabric-client/lib/impl/CryptoSuite_ECDSA_AES.js');
+var KeyStore = require('fabric-client/lib/impl/CryptoKeyStore.js');
+var ecdsaKey = require('fabric-client/lib/impl/ecdsa/key.js');
 
-var utils = require('../fabric-client/lib/utils.js');
+var utils = require('fabric-client/lib/utils.js');
 var logger = utils.getLogger('utils/util.js');
 
 module.exports.CHAINCODE_PATH = 'github.com/example_cc';
