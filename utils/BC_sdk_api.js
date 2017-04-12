@@ -453,9 +453,9 @@ var bcSdkApi = function() {
                     header: header
                 };
 
-                // set the transaction listener and set a timeout of 30sec
-                // if the transaction did not get committed within the timeout period,
-                // fail the test
+                // // set the transaction listener and set a timeout of 30sec
+                // // if the transaction did not get committed within the timeout period,
+                // // fail the test
                 // var deployId = tx_id.toString();
                 //
                 // var eventPromisesTx = [];
@@ -465,7 +465,7 @@ var bcSdkApi = function() {
                 //
                 //         eh.registerTxEvent(deployId.toString(), function(tx, code){
                 //             clearTimeout(handle);
-                //             logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
+                //             // logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
                 //             eh.unregisterTxEvent(deployId);
                 //             if (code !== 'VALID') {
                 //                 logger.error('The chaincode instantiate transaction was invalid, code = ' + code);
