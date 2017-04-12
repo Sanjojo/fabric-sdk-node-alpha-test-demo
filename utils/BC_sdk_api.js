@@ -17,7 +17,7 @@ var logger = utils.getLogger('utils/BC_sdk_api.js');
 var the_user = null;
 var tx_id = null;
 var nonce = null;
-var allEventhubs = [];
+// var allEventhubs = [];
 
 
 
@@ -139,7 +139,7 @@ var bcSdkApi = function() {
                         )
                     );
 
-                    let eh = new EventHub();
+                    var eh = new EventHub();
                     eh.setPeerAddr(
                         ORGS[org][key].events,
                         {
@@ -149,7 +149,7 @@ var bcSdkApi = function() {
                     );
                     eh.connect();
                     eventhubs.push(eh);
-                    allEventhubs.push(eh);
+                    // allEventhubs.push(eh);
                 }
             }
         }
@@ -176,8 +176,8 @@ var bcSdkApi = function() {
 
             var eventPromises = [];
             eventhubs.forEach(function(eh){
-                let txPromise = new Promise(function(resolve, reject){
-                    let handle = setTimeout(reject, 30000);
+                var txPromise = new Promise(function(resolve, reject){
+                    var handle = setTimeout(reject, 30000);
 
                     eh.registerBlockEvent(function(block){
                         clearTimeout(handle);
@@ -200,7 +200,7 @@ var bcSdkApi = function() {
 
                 eventPromises.push(txPromise);
             });
-            let sendPromise = chain.joinChannel(request);
+            var sendPromise = chain.joinChannel(request);
             return Promise.all([sendPromise].concat(eventPromises));
             // return Promise.all([sendPromise]);
         }, function(err){
@@ -377,7 +377,7 @@ var bcSdkApi = function() {
                 );
                 chain.addPeer(peer);
 
-                let eh = new EventHub();
+                var eh = new EventHub();
                 eh.setPeerAddr(
                     ORGS[key].peer1.events,
                     {
@@ -387,7 +387,7 @@ var bcSdkApi = function() {
                 );
                 eh.connect();
                 eventhubs.push(eh);
-                allEventhubs.push(eh);
+                // allEventhubs.push(eh);
             }
         }
 
@@ -453,20 +453,20 @@ var bcSdkApi = function() {
                     header: header
                 };
 
-                // // set the transaction listener and set a timeout of 30sec
-                // // if the transaction did not get committed within the timeout period,
-                // // fail the test
+                // set the transaction listener and set a timeout of 30sec
+                // if the transaction did not get committed within the timeout period,
+                // fail the test
                 // var deployId = tx_id.toString();
                 //
                 // var eventPromisesTx = [];
                 // eventhubs.forEach(function(eh){
-                //     let txPromise = new Promise(function(resolve, reject){
-                //         let handle = setTimeout(reject, 30000);
+                //     var txPromise = new Promise(function(resolve, reject){
+                //         var handle = setTimeout(reject, 30000);
                 //
                 //         eh.registerTxEvent(deployId.toString(), function(tx, code){
                 //             clearTimeout(handle);
                 //             logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
-                //             // eh.unregisterTxEvent(deployId);
+                //             eh.unregisterTxEvent(deployId);
                 //             if (code !== 'VALID') {
                 //                 logger.error('The chaincode instantiate transaction was invalid, code = ' + code);
                 //                 reject();
@@ -601,6 +601,168 @@ var bcSdkApi = function() {
         });
     };
 
+    var invoke_by_chaincode = function(org, callback) {
+        logger.info('invoke_by_chaincode-------start---------');
+
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
+
+        var caRootsPath = ORGS.orderer.tls_cacerts;
+        let data = fs.readFileSync(path.join(__dirname,caRootsPath));
+        let caroots = Buffer.from(data).toString();
+
+        chain.addOrderer(
+            new Orderer(
+                ORGS.orderer.url,
+                {
+                    'pem': caroots,
+                    'ssl-target-name-override': ORGS.orderer['server-hostname']
+                }
+            )
+        );
+
+        var orgName = ORGS[org].name;
+
+        var eventhubs = [];
+
+        // set up the chain to use each org's 'peer1' for
+        // both requests and events
+        let key = org;
+        if (key) {
+            // for (let key in ORGS) {
+            if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
+                let data = fs.readFileSync(path.join(__dirname,ORGS[key].peer1['tls_cacerts']));
+                let peer = new Peer(
+                    ORGS[key].peer1.requests,
+                    {
+                        pem: Buffer.from(data).toString(),
+                        'ssl-target-name-override': ORGS[key].peer1['server-hostname']
+                    });
+                chain.addPeer(peer);
+            }
+        }
+
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(orgName)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
+        }).then(function(admin){
+            the_user = admin;
+            nonce = utils.getNonce();
+            tx_id = chain.buildTransactionID(nonce, the_user);
+
+            // send query
+            var request = {
+                chaincodeId : testUtil.END2END.chaincodeId,
+                chaincodeVersion : testUtil.END2END.chaincodeVersion,
+                fcn: 'invoke',
+                args: ['move', 'a', 'b','100'],
+                chainId: testUtil.END2END.channel,
+                txId: tx_id,
+                nonce: nonce
+            };
+            return chain.sendTransactionProposal(request);
+        },function(err){
+            logger.info('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+            callback('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+        }).then(function(results){
+            var proposalResponses = results[0];
+
+            var proposal = results[1];
+            var header   = results[2];
+            var all_good = true;
+            for(var i in proposalResponses) {
+                let one_good = false;
+                if (proposalResponses && proposalResponses[0].response && proposalResponses[0].response.status === 200) {
+                    one_good = true;
+                    logger.info('transaction proposal was good');
+                } else {
+                    logger.error('transaction proposal was bad');
+                }
+                all_good = all_good & one_good;
+            }
+            if (all_good) {
+                logger.info('Successfully sent Proposal and received ProposalResponse: Status - ' + proposalResponses[0].response.status +
+                    ', message - ' + proposalResponses[0].response.message +
+                    ', metadata - ' + proposalResponses[0].response.payload +
+                    ', endorsement signature: ' + proposalResponses[0].endorsement.signature);
+                var request = {
+                    proposalResponses: proposalResponses,
+                    proposal: proposal,
+                    header: header
+                };
+
+                // set the transaction listener and set a timeout of 30sec
+                // if the transaction did not get committed within the timeout period,
+                // fail the test
+                var deployId = tx_id.toString();
+
+                var eventPromises = [];
+                eventhubs.forEach(function(eh){
+                    let txPromise = new Promise(function(resolve, reject) {
+                        let handle = setTimeout(reject, 30000);
+
+                        eh.registerTxEvent(deployId.toString(), function(tx, code){
+                            clearTimeout(handle);
+                            eh.unregisterTxEvent(deployId);
+
+                            if (code !== 'VALID') {
+                                logger.error('The balance transfer transaction was invalid, code = ' + code);
+                                reject();
+                            } else {
+                                logger.info('The balance transfer transaction has been committed on peer '+ eh.ep._endpoint.addr);
+                                resolve();
+                            }
+                        });
+                    });
+
+                    eventPromises.push(txPromise);
+                });
+
+                var sendPromise = chain.sendTransaction(request);
+                return Promise.all([sendPromise].concat(eventPromises))
+                    .then(function(results){
+
+                    logger.debug(' event promise all complete and testing complete');
+                    return results[0]; // the first returned value is from the 'sendPromise' which is from the 'sendTransaction()' call
+
+                }).catch(function(err){
+
+                    logger.error('Failed to send transaction and get notifications within the timeout period.' + err.stack ? err.stack : err);
+                    callback('Failed to send transaction and get notifications within the timeout period.');
+
+                });
+
+            } else {
+                logger.error('Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...');
+                callback('Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...');
+            }
+        },function(err){
+            logger.error('Failed to send proposal due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send proposal due to error: ' + err.stack ? err.stack : err);
+        }).then(function(response){
+
+            if (response.status === 'SUCCESS') {
+                logger.info('Successfully sent transaction to the orderer.');
+                logger.info('******************************************************************');
+                logger.info('To manually run query.js, set the following environment variables:');
+                logger.info('E2E_TX_ID='+'\''+tx_id+'\'');
+                logger.info('******************************************************************');
+            } else {
+                logger.error('Failed to order the transaction. Error code: ' + response.status);
+                callback('Failed to order the transaction. Error code: ' + response.status);
+            }
+        }, function(err){
+
+            logger.error('Failed to send transaction due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send transaction due to error: ' + err.stack ? err.stack : err);
+
+        });
+    };
+
+
     function sleep(ms) {
         return new Promise(function(resolve){setTimeout(resolve, ms)});
     }
@@ -610,6 +772,7 @@ var bcSdkApi = function() {
     _bcSdkApi.install_Chaincode = install_Chaincode;
     _bcSdkApi.instantiate_Chaincode = instantiate_Chaincode;
     _bcSdkApi.query_by_chaincode = query_by_chaincode;
+    _bcSdkApi.invoke_by_chaincode = invoke_by_chaincode;
     return _bcSdkApi;
 };
 
